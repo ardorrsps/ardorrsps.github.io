@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ardor — Web Client (TeaVM)</title>
+    <!--
+      This is the GAME page: it boots the real 317 client compiled to JS by
+      TeaVM (`./webclient.js`, exporting `start(canvasId, wsUrl)`).
+      The decode-benchmark PoC lives at ./bench.html (harness.js); the
+      WebGL render + net spikes at ./render.html and ./net.html.
+    -->
+    <style>
+        html, body { margin: 0; height: 100%; background: #000; color: #ccc;
+            font: 13px/1.4 system-ui, sans-serif; }
+        .wrap { display: flex; flex-direction: column; align-items: center;
+            gap: .5rem; padding: 1rem; }
+        canvas#game { background: #000; image-rendering: pixelated;
+            box-shadow: 0 0 0 1px #333; }
+        #status { min-height: 1.4em; padding: .35rem .6rem; border-radius: 4px;
+            background: #16181d; color: #9bd; font-variant-numeric: tabular-nums; }
+        #status.error { background: #2a1414; color: #f88; white-space: pre-wrap;
+            max-width: 765px; }
+        /* First visit downloads the 317 cache plus every shipped slice (~134MB),
+           so the wait needs a real bar rather than a line of text that looks
+           frozen. Hidden until there is something to report, and hidden again
+           once the client starts. */
+        #progress-bar { width: 765px; max-width: 100%; height: 6px;
+            border-radius: 3px; background: #16181d; overflow: hidden; }
+        #progress-fill { height: 100%; width: 0; background: #4a9eff;
+            transition: width .15s linear; }
+        a { color: #6af; }
+        a.btn { display: inline-block; padding: .5rem 1rem; border-radius: 5px;
+            background: #1d2530; border: 1px solid #2f3d4f; color: #9cf;
+            text-decoration: none; font-weight: 600; }
+        a.btn:hover { background: #263041; border-color: #3d5068; color: #bdf; }
+        /* Wraps to one button per line on a narrow viewport rather than
+           overflowing the 765px column. */
+        .links { display: flex; flex-wrap: wrap; justify-content: center;
+            gap: .5rem; margin: 0; }
+        .legal { max-width: 765px; margin: .5rem 0 0; color: #6b7280;
+            font-size: 11px; line-height: 1.5; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <canvas id="game" width="765" height="503"></canvas>
+        <p id="status">Starting…</p>
+        <div id="progress-bar" hidden role="progressbar"
+             aria-label="Cache download" aria-valuemin="0" aria-valuemax="100"><div id="progress-fill"></div></div>
+        <!-- dl=1, not dl=0: the ?dl=0 form opens Dropbox's preview page, so a
+             button labelled "download" would not download.
+             target=_blank is load-bearing, not decoration: a same-tab navigation
+             to a download URL cancels this document's in-flight fetches BEFORE
+             the response's Content-Disposition turns it back into a download, so
+             clicking this mid-cache-download killed the boot ("Error in input
+             stream" — Firefox's message for a fetch body stream cancelled under
+             it). Downloading from a fresh browsing context leaves our fetches
+             alone. rel=noopener because target=_blank to a third-party origin. -->
+        <p class="links">
+            <a class="btn" target="_blank" rel="noopener" href="https://www.dropbox.com/scl/fi/3lpxa4e6xpy1tuqtg1h31/Ardor.jar?rlkey=e443pzsqsrfxm0xoawoz6tcbo&amp;st=kipjc8oy&amp;dl=1">Download the desktop client</a>
+            <!-- Same invite as GameSettings.DiscordUrl (::discord in game). -->
+            <a class="btn" target="_blank" rel="noopener" href="https://discord.gg/5Q2rW7n6pm">Join the Discord</a>
+        </p>
+        <!-- The dev spikes (bench/render/net, see the comment in <head>) are
+             deliberately NOT linked here: this file is published verbatim, but
+             scripts/webclient-stage.sh stages only index.html + boot.js +
+             webclient.js + a generated config.js + a generated README.md, so
+             links to them would be three 404s on the public site. Reach them by
+             URL in local dev. -->
+
+        <!-- Also present in the generated README.md (see webclient-stage.sh):
+             a visitor and a repo browser arrive by different routes and neither
+             sees the other, so the notice has to exist in both. -->
+        <p class="legal">
+            A non-commercial fan project. Not affiliated with, endorsed by, or
+            associated with Jagex Ltd. RuneScape and Old School RuneScape are
+            trademarks of Jagex Ltd.; game assets derived from those works
+            remain the property of Jagex Ltd. and are used without claim of
+            ownership. Other assets remain the property of their respective
+            owners. No infringement intended.
+        </p>
+    </div>
+
+    <!-- config.js is a classic script so it runs BEFORE the deferred boot
+         module, letting a deploy point the client at its cache host / wss
+         endpoint without touching boot.js. See config.js. -->
+    <script src="./config.js"></script>
+    <script type="module" src="./boot.js"></script>
+</body>
+</html>
